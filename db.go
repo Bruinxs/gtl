@@ -104,6 +104,9 @@ func newElemFillResults(elemT reflect.Type, cols []string, results []interface{}
 		if idx, ok := cacheIdx[name]; ok {
 			field := elemV.Field(idx)
 			resultV := reflect.ValueOf(reflect.Indirect(reflect.ValueOf(results[i])).Interface())
+			if !resultV.IsValid() {
+				continue
+			}
 			if tag, ok := cacheTag[name]; ok {
 				switch tag {
 				case "json":
@@ -114,7 +117,9 @@ func newElemFillResults(elemT reflect.Type, cols []string, results []interface{}
 						if err != nil {
 							return elemV.Addr(), err
 						}
-						field.Set(reflect.ValueOf(fitf))
+						if fitf != nil {
+							field.Set(reflect.ValueOf(fitf))
+						}
 					} else if field.Kind() == reflect.Slice {
 						fieldV := reflect.MakeSlice(field.Type(), 0, resultV.Len())
 						fitf := fieldV.Interface()

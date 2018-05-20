@@ -2,6 +2,7 @@ package sqlcom
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func TestQueryTo(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(len(maps), ShouldEqual, 2)
 				So(len(maps[0]), ShouldEqual, 9)
-				So(maps[0]["name"].(string), ShouldEqual, "name1")
+				So(maps[0]["name"], ShouldEqual, "name1")
 				So(maps[1]["count"], ShouldEqual, 2)
 				So(maps[0]["money"], ShouldEqual, 1.1)
 				So(maps[1]["data"], ShouldEqual, "binary2")
@@ -87,6 +88,59 @@ func TestQueryTo(t *testing.T) {
 				So(items[0].Images, ShouldResemble, []string{"url1", "url2"})
 				So(items[1].Ext, ShouldResemble, map[string]interface{}{"num": 1.0})
 				So(items[0].Time, ShouldEqual, now.Unix()*1e3)
+			})
+		})
+
+		Convey("insert null value", func() {
+			_, err := db.Exec("INSERT INTO test(id) values(10)")
+			So(err, ShouldBeNil)
+
+			Convey("query to map slice", func() {
+				var maps []map[string]interface{}
+				err := db.QueryTo(&maps, "SELECT * FROM test WHERE id = ?;", 10)
+				So(err, ShouldBeNil)
+				fmt.Println(maps)
+				So(len(maps), ShouldEqual, 1)
+				So(len(maps[0]), ShouldEqual, 1)
+				So(maps[0]["id"], ShouldEqual, 10)
+			})
+
+			Convey("query to struct slice", func() {
+				var items []*Item
+				err := db.QueryTo(&items, "SELECT * FROM test WHERE id = ?;", 10)
+				So(err, ShouldBeNil)
+				So(items[0].Id, ShouldEqual, 10)
+				So(items[0].Name, ShouldEqual, "")
+				So(items[0].Count, ShouldEqual, 0)
+				So(items[0].Money, ShouldEqual, 0)
+				So(items[0].Data, ShouldEqual, "")
+				So(items[0].List, ShouldResemble, []map[string]interface{}(nil))
+				So(items[0].Images, ShouldResemble, []string(nil))
+				So(items[0].Ext, ShouldResemble, map[string]interface{}(nil))
+				So(items[0].Time, ShouldEqual, 0)
+			})
+		})
+
+		Convey("insert null json value", func() {
+			_, err := db.Exec("INSERT INTO test(id, ext) values(11, null)")
+			So(err, ShouldBeNil)
+
+			Convey("query to map slice", func() {
+				var maps []map[string]interface{}
+				err := db.QueryTo(&maps, "SELECT * FROM test WHERE id = ?;", 11)
+				So(err, ShouldBeNil)
+				fmt.Println(maps)
+				So(len(maps), ShouldEqual, 1)
+				So(len(maps[0]), ShouldEqual, 1)
+				So(maps[0]["id"], ShouldEqual, 11)
+			})
+
+			Convey("query to struct slice", func() {
+				var items []*Item
+				err := db.QueryTo(&items, "SELECT * FROM test WHERE id = ?;", 11)
+				So(err, ShouldBeNil)
+				So(items[0].Id, ShouldEqual, 11)
+				So(items[0].Ext, ShouldResemble, map[string]interface{}(nil))
 			})
 		})
 	})
