@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -143,15 +144,54 @@ func newElemFillResults(elemT reflect.Type, cols []string, results []interface{}
 			} else if field.Kind() == resultV.Kind() {
 				field.Set(resultV)
 			} else {
-				switch field.Kind() {
+				switch resultV.Kind() {
+				case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+					field.SetInt(resultV.Int())
+				case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+					field.SetUint(resultV.Uint())
+				case reflect.Float32, reflect.Float64:
+					field.SetFloat(resultV.Float())
 				case reflect.String:
-					field.Set(reflect.ValueOf(string(resultV.Interface().([]byte))))
-				case reflect.Int:
-					field.Set(reflect.ValueOf(int(resultV.Int())))
-				case reflect.Uint:
-					field.Set(reflect.ValueOf(uint(resultV.Uint())))
+					field.SetString(resultV.String())
+				case reflect.Bool:
+					field.SetBool(resultV.Bool())
+
+				case reflect.Slice:
+					str := string(resultV.Interface().([]byte))
+					switch field.Kind() {
+					case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+						val, err := strconv.ParseInt(str, 10, 64)
+						if err != nil {
+							return elemV.Addr(), err
+						}
+						field.SetInt(val)
+					case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+						val, err := strconv.ParseUint(str, 10, 64)
+						if err != nil {
+							return elemV.Addr(), err
+						}
+						field.SetUint(val)
+					case reflect.Float32, reflect.Float64:
+						val, err := strconv.ParseFloat(str, 64)
+						if err != nil {
+							return elemV.Addr(), err
+						}
+						field.SetFloat(val)
+					case reflect.String:
+						field.SetString(str)
+					case reflect.Bool:
+						val, err := strconv.ParseBool(str)
+						if err != nil {
+							return elemV.Addr(), err
+						}
+						field.SetBool(val)
+					default:
+						return elemV.Addr(), fmt.Errorf("file '%v' type %v no match case to hand bytes result value %v", name, field.Kind(), str)
+					}
+
 				default:
 					return elemV.Addr(), fmt.Errorf("field '%v' type %v not match result type %v", name, field.Kind(), resultV.Kind())
+
 				}
 			}
 		}
