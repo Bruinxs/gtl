@@ -2,7 +2,6 @@ package sqlcom
 
 import (
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -99,7 +98,6 @@ func TestQueryTo(t *testing.T) {
 				var maps []map[string]interface{}
 				err := db.QueryTo(&maps, "SELECT * FROM test WHERE id = ?;", 10)
 				So(err, ShouldBeNil)
-				fmt.Println(maps)
 				So(len(maps), ShouldEqual, 1)
 				So(len(maps[0]), ShouldEqual, 1)
 				So(maps[0]["id"], ShouldEqual, 10)
@@ -121,7 +119,7 @@ func TestQueryTo(t *testing.T) {
 			})
 		})
 
-		Convey("insert null json value", func() {
+		Convey("insert null json object value", func() {
 			_, err := db.Exec("INSERT INTO test(id, ext) values(11, null)")
 			So(err, ShouldBeNil)
 
@@ -129,7 +127,6 @@ func TestQueryTo(t *testing.T) {
 				var maps []map[string]interface{}
 				err := db.QueryTo(&maps, "SELECT * FROM test WHERE id = ?;", 11)
 				So(err, ShouldBeNil)
-				fmt.Println(maps)
 				So(len(maps), ShouldEqual, 1)
 				So(len(maps[0]), ShouldEqual, 1)
 				So(maps[0]["id"], ShouldEqual, 11)
@@ -141,6 +138,19 @@ func TestQueryTo(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(items[0].Id, ShouldEqual, 11)
 				So(items[0].Ext, ShouldResemble, map[string]interface{}(nil))
+			})
+		})
+
+		Convey("insert null json array value", func() {
+			_, err := db.Exec("INSERT INTO test(id, images) values(12, 'null')")
+			So(err, ShouldBeNil)
+
+			Convey("query to struct slice", func() {
+				var items []*Item
+				err := db.QueryTo(&items, "SELECT * FROM test WHERE id = ?;", 12)
+				So(err, ShouldBeNil)
+				So(items[0].Id, ShouldEqual, 12)
+				So(items[0].Images, ShouldResemble, []string(nil))
 			})
 		})
 	})

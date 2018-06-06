@@ -127,11 +127,15 @@ func newElemFillResults(elemT reflect.Type, cols []string, results []interface{}
 						if err != nil {
 							return elemV.Addr(), err
 						}
-						fitfV := reflect.ValueOf(fitf)
-						for i := 0; i < fitfV.Len(); i++ {
-							fieldV = reflect.Append(fieldV, fitfV.Index(i).Elem())
+						if fitf != nil {
+							fitfV := reflect.ValueOf(fitf)
+							for i := 0; i < fitfV.Len(); i++ {
+								fieldV = reflect.Append(fieldV, fitfV.Index(i).Elem())
+							}
+							field.Set(fieldV)
+						} else {
+							field.Set(reflect.Zero(field.Type()))
 						}
-						field.Set(fieldV)
 					} else {
 						return elemV.Addr(), fmt.Errorf("in json tag, field %v of struct type %v is illegal", elemT.Field(idx), field.Kind())
 					}
