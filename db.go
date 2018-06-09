@@ -208,3 +208,33 @@ func newElemFillResults(elemT reflect.Type, cols []string, results []interface{}
 
 	return elemV.Addr(), nil
 }
+
+//Insert insert and return last insert id
+func (db *DB) Insert(sql string, args ...interface{}) (int64, error) {
+	result, err := db.Exec(sql, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+//Update update at last one row data
+func (db *DB) Update(sql string, args ...interface{}) error {
+	updated, err := db.UpdateAll(sql, args...)
+	if err != nil {
+		return err
+	}
+	if updated < 1 {
+		return ErrorNotFound
+	}
+	return nil
+}
+
+//UpdateAll update all match row data and return affect row
+func (db *DB) UpdateAll(sql string, args ...interface{}) (int64, error) {
+	result, err := db.Exec(sql, args...)
+	if err != nil {
+		return -1, err
+	}
+	return result.RowsAffected()
+}
